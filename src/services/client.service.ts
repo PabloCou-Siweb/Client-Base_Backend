@@ -81,13 +81,17 @@ export const getClients = async (
 
   const where: any = {};
 
-  if (filters?.search) {
-    where.OR = [
-      { name: { contains: filters.search, mode: 'insensitive' } },
-      { email: { contains: filters.search, mode: 'insensitive' } },
-      { phone: { contains: filters.search, mode: 'insensitive' } },
-      { company: { contains: filters.search, mode: 'insensitive' } },
-    ];
+  if (filters?.search && typeof filters.search === 'string') {
+    const searchTerm = filters.search.trim();
+    
+    if (searchTerm.length > 0 && searchTerm.length <= 100) {
+      where.OR = [
+        { name: { contains: searchTerm } },
+        { email: { contains: searchTerm } },
+        { phone: { contains: searchTerm } },
+        { company: { contains: searchTerm } },
+      ];
+    }
   }
 
   if (filters?.status) {
@@ -141,30 +145,35 @@ export const getClients = async (
     }
   }
 
-  const [clients, total] = await Promise.all([
-    prisma.client.findMany({
-      where,
-      skip,
-      take: limit,
-      include: {
-        provider: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    }),
-    prisma.client.count({ where }),
-  ]);
+  try {
+    const [clients, total] = await Promise.all([
+      prisma.client.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          provider: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.client.count({ where }),
+    ]);
 
-  return {
-    clients,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    return {
+      clients,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error('Error al buscar clientes:', error);
+    throw new Error('Error al buscar clientes. Por favor, intente de nuevo.');
+  }
 };
 
 export const getClientById = async (id: string) => {

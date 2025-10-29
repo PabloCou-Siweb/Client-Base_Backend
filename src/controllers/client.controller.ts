@@ -20,7 +20,10 @@ export const getClients = async (req: AuthRequest, res: Response): Promise<void>
     const filters: any = {};
 
     if (req.query.search) {
-      filters.search = req.query.search as string;
+      const searchValue = (req.query.search as string).trim();
+      if (searchValue && searchValue.length <= 100) {
+        filters.search = searchValue;
+      }
     }
 
     if (req.query.status) {
