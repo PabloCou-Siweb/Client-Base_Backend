@@ -1,0 +1,6 @@
+name,email,phone,company,status,provider,price,date,address,city,country,notes
+TechCorp Solutions,contact@techcorp.com,+1-555-0101,TechCorp Inc.,ACTIVE,TechCorp,15000,2025-10-29,123 Tech Street,San Francisco,USA,Cliente importante
+CloudWave Solutions,info@cloudwave.com,+1-555-0102,CloudWave LLC,ACTIVE,CloudWave,22000,2025-10-28,456 Cloud Ave,Seattle,USA,
+DataNest Innovations,hello@datanest.com,+1-555-0103,DataNest Corp,INACTIVE,DataNest,18000,2025-10-27,789 Data Blvd,Austin,USA,Cliente inactivo temporalmente
+NextGen Systems,contact@nextgen.com,+1-555-0104,NextGen Tech,ACTIVE,NextGen Systems,25000,2025-10-26,321 Innovation Dr,Boston,USA,
+

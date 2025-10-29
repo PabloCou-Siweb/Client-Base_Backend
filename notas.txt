@@ -1,0 +1,7 @@
+📝 Credenciales:
+Admin:
+Email: admin@clientbase.com
+Password: admin123
+Usuario:
+Email: user@clientbase.com
+Password: user123
