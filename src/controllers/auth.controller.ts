@@ -50,9 +50,40 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { name, avatar } = req.body;
-    const user = await authService.updateUserProfile(req.user.userId, { name, avatar });
-    res.json(user);
+    const { name, email, avatar } = req.body;
+    const user = await authService.updateUserProfile(req.user.userId, { name, email, avatar });
+    
+    res.json({
+      message: 'Perfil actualizado correctamente',
+      user,
+    });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+
+export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      res.status(400).json({ error: 'Todos los campos son requeridos' });
+      return;
+    }
+
+    const result = await authService.changePassword(
+      req.user.userId,
+      currentPassword,
+      newPassword,
+      confirmPassword
+    );
+
+    res.json(result);
   } catch (error) {
     res.status(400).json({ error: (error as Error).message });
   }

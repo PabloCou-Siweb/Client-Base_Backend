@@ -48,9 +48,10 @@ export const exportClients = async (req: AuthRequest, res: Response): Promise<vo
       res.setHeader('Content-Disposition', 'attachment; filename=clientes.csv');
       res.send(buffer);
     } else if (format === 'pdf') {
-      const html = await exportService.exportClientsToPDF(filters);
-      res.setHeader('Content-Type', 'text/html');
-      res.send(html);
+      const buffer = await exportService.exportClientsToPDF(filters);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=clientes.pdf');
+      res.send(buffer);
     } else {
       res.status(400).json({ error: 'Formato no soportado. Use excel, csv o pdf' });
     }

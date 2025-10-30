@@ -1,6 +1,7 @@
 import xlsx from 'xlsx';
 import prisma from '../config/database';
 import { ClientStatus } from '@prisma/client';
+import puppeteer from 'puppeteer';
 
 interface ExportFilters {
   search?: string;
@@ -147,7 +148,7 @@ export const exportClientsToCSV = async (filters?: ExportFilters): Promise<Buffe
   return Buffer.from(csv, 'utf-8');
 };
 
-export const exportClientsToPDF = async (filters?: ExportFilters): Promise<string> => {
+export const exportClientsToPDF = async (filters?: ExportFilters): Promise<Buffer> => {
   const where = buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
@@ -219,6 +220,37 @@ export const exportClientsToPDF = async (filters?: ExportFilters): Promise<strin
     </html>
   `;
 
-  return html;
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu',
+    ],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20px',
+        right: '20px',
+        bottom: '20px',
+        left: '20px',
+      },
+    });
+
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
 };
 
