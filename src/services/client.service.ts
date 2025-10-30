@@ -106,18 +106,27 @@ export const getClients = async (
     try {
       const providerNamesArray = JSON.parse(filters.providerNames);
       if (Array.isArray(providerNamesArray) && providerNamesArray.length > 0) {
-        const providers = await prisma.provider.findMany({
-          where: {
-            name: {
-              in: providerNamesArray,
+        const providerSearchPromises = providerNamesArray.map(async (providerName) => {
+          const trimmedName = providerName.trim();
+          return await prisma.provider.findMany({
+            where: {
+              name: {
+                contains: trimmedName,
+              },
             },
-          },
+          });
         });
+
+        const providerResults = await Promise.all(providerSearchPromises);
+        const providers = providerResults.flat();
         const providerIds = providers.map((p) => p.id);
+
         if (providerIds.length > 0) {
           where.providerId = {
             in: providerIds,
           };
+        } else {
+          where.id = { in: [] };
         }
       }
     } catch (error) {

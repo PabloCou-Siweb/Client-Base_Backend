@@ -89,3 +89,22 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
+export const uploadAvatarController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+
+    if (!req.file) {
+      res.status(400).json({ error: 'No se ha proporcionado ninguna imagen' });
+      return;
+    }
+
+    const result = await authService.uploadAvatar(req.user.userId, req.file.filename);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+};
+

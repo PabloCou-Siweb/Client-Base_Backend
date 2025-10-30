@@ -189,3 +189,29 @@ export const changePassword = async (
   return { message: 'Contraseña actualizada correctamente' };
 };
 
+export const uploadAvatar = async (userId: string, filename: string) => {
+  const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+  const avatarUrl = `${baseUrl}/uploads/avatars/${filename}`;
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      avatar: avatarUrl,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      avatar: true,
+      updatedAt: true,
+    },
+  });
+
+  return {
+    message: 'Avatar actualizado correctamente',
+    avatarUrl: avatarUrl,
+    user,
+  };
+};
+
