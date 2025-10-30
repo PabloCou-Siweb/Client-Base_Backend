@@ -44,7 +44,7 @@ export const registerUser = async (email: string, password: string, name?: strin
       email: user.email,
       name: user.name,
       role: user.role,
-      avatar: user.avatar,
+      avatarUrl: user.avatar,
     },
   };
 };
@@ -81,7 +81,7 @@ export const loginUser = async (email: string, password: string) => {
       email: user.email,
       name: user.name,
       role: user.role,
-      avatar: user.avatar,
+      avatarUrl: user.avatar,
     },
   };
 };
@@ -103,7 +103,14 @@ export const getUserProfile = async (userId: string) => {
     throw new Error('Usuario no encontrado');
   }
 
-  return user;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    avatarUrl: user.avatar,
+    createdAt: user.createdAt,
+  };
 };
 
 export const updateUserProfile = async (
@@ -141,7 +148,14 @@ export const updateUserProfile = async (
     },
   });
 
-  return user;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    avatarUrl: user.avatar,
+    updatedAt: user.updatedAt,
+  };
 };
 
 export const changePassword = async (
@@ -211,7 +225,14 @@ export const uploadAvatar = async (userId: string, filename: string) => {
   return {
     message: 'Avatar actualizado correctamente',
     avatarUrl: avatarUrl,
-    user,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      avatarUrl: user.avatar,
+      updatedAt: user.updatedAt,
+    },
   };
 };
 
