@@ -26,7 +26,10 @@ const buildWhereClause = (filters?: ExportFilters) => {
   }
 
   if (filters?.status) {
-    where.status = filters.status;
+    const statusValue = filters.status.toString().toUpperCase();
+    if (statusValue === 'ACTIVE' || statusValue === 'INACTIVE') {
+      where.status = statusValue;
+    }
   }
 
   if (filters?.providerId) {
@@ -44,12 +47,12 @@ const buildWhereClause = (filters?: ExportFilters) => {
   }
 
   if (filters?.startDate || filters?.endDate) {
-    where.date = {};
+    where.createdAt = {};
     if (filters.startDate) {
-      where.date.gte = filters.startDate;
+      where.createdAt.gte = filters.startDate;
     }
     if (filters.endDate) {
-      where.date.lte = filters.endDate;
+      where.createdAt.lte = filters.endDate;
     }
   }
 

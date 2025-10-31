@@ -151,18 +151,20 @@ export const getClients = async (
     const endDay = new Date(filters.endDate);
     endDay.setUTCHours(23, 59, 59, 999);
     
-    where.date = {
+    where.createdAt = {
       gte: startDay,
       lte: endDay,
     };
   } else if (filters?.startDate) {
     const startDay = new Date(filters.startDate);
     startDay.setUTCHours(0, 0, 0, 0);
-    where.date = { gte: startDay };
+    
+    where.createdAt = { gte: startDay };
   } else if (filters?.endDate) {
     const endDay = new Date(filters.endDate);
     endDay.setUTCHours(23, 59, 59, 999);
-    where.date = { lte: endDay };
+    
+    where.createdAt = { lte: endDay };
   }
 
   try {
