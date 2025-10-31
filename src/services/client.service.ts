@@ -144,14 +144,25 @@ export const getClients = async (
     }
   }
 
-  if (filters?.startDate || filters?.endDate) {
-    where.date = {};
-    if (filters.startDate) {
-      where.date.gte = filters.startDate;
-    }
-    if (filters.endDate) {
-      where.date.lte = filters.endDate;
-    }
+  if (filters?.startDate && filters?.endDate) {
+    const startDay = new Date(filters.startDate);
+    startDay.setUTCHours(0, 0, 0, 0);
+    
+    const endDay = new Date(filters.endDate);
+    endDay.setUTCHours(23, 59, 59, 999);
+    
+    where.date = {
+      gte: startDay,
+      lte: endDay,
+    };
+  } else if (filters?.startDate) {
+    const startDay = new Date(filters.startDate);
+    startDay.setUTCHours(0, 0, 0, 0);
+    where.date = { gte: startDay };
+  } else if (filters?.endDate) {
+    const endDay = new Date(filters.endDate);
+    endDay.setUTCHours(23, 59, 59, 999);
+    where.date = { lte: endDay };
   }
 
   try {

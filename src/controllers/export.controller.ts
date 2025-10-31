@@ -30,11 +30,13 @@ export const exportClients = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     if (req.query.startDate) {
-      filters.startDate = new Date(req.query.startDate as string);
+      const dateStr = req.query.startDate as string;
+      filters.startDate = new Date(dateStr + 'T00:00:00Z');
     }
 
     if (req.query.endDate) {
-      filters.endDate = new Date(req.query.endDate as string);
+      const dateStr = req.query.endDate as string;
+      filters.endDate = new Date(dateStr + 'T00:00:00Z');
     }
 
     if (format === 'excel') {
