@@ -95,7 +95,35 @@ const buildWhereClause = async (filters?: ExportFilters) => {
   return where;
 };
 
-export const exportClientsToExcel = async (filters?: ExportFilters): Promise<Buffer> => {
+const buildExportData = (clients: any[], selectedFields: string[] | null) => {
+  const fieldMapping: { [key: string]: { header: string; getValue: (client: any) => any } } = {
+    'provider': { header: 'Proveedor', getValue: (c) => c.provider.name },
+    'email': { header: 'Email', getValue: (c) => c.email },
+    'phone': { header: 'Teléfono', getValue: (c) => c.phone || '' },
+    'date': { header: 'Fecha Creación', getValue: (c) => c.createdAt.toISOString().split('T')[0] },
+    'price': { header: 'Precio', getValue: (c) => c.price },
+    'status': { header: 'Estado', getValue: (c) => c.status },
+    'name': { header: 'Nombre', getValue: (c) => c.name },
+    'company': { header: 'Empresa', getValue: (c) => c.company || '' },
+    'address': { header: 'Dirección', getValue: (c) => c.address || '' },
+    'city': { header: 'Ciudad', getValue: (c) => c.city || '' },
+    'country': { header: 'País', getValue: (c) => c.country || '' },
+  };
+
+  const fieldsToExport = selectedFields || Object.keys(fieldMapping);
+
+  return clients.map(client => {
+    const row: any = {};
+    fieldsToExport.forEach(field => {
+      if (fieldMapping[field]) {
+        row[fieldMapping[field].header] = fieldMapping[field].getValue(client);
+      }
+    });
+    return row;
+  });
+};
+
+export const exportClientsToExcel = async (filters?: ExportFilters, selectedFields: string[] | null = null): Promise<Buffer> => {
   const where = await buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
@@ -108,22 +136,7 @@ export const exportClientsToExcel = async (filters?: ExportFilters): Promise<Buf
     },
   });
 
-  const data = clients.map(client => ({
-    ID: client.id,
-    Nombre: client.name,
-    Email: client.email,
-    Teléfono: client.phone || '',
-    Empresa: client.company || '',
-    Estado: client.status,
-    Proveedor: client.provider.name,
-    Precio: client.price,
-    Fecha: client.date.toISOString().split('T')[0],
-    Dirección: client.address || '',
-    Ciudad: client.city || '',
-    País: client.country || '',
-    Notas: client.notes || '',
-    'Fecha Creación': client.createdAt.toISOString().split('T')[0],
-  }));
+  const data = buildExportData(clients, selectedFields);
 
   const worksheet = xlsx.utils.json_to_sheet(data);
   const workbook = xlsx.utils.book_new();
@@ -151,7 +164,7 @@ export const exportClientsToExcel = async (filters?: ExportFilters): Promise<Buf
   return buffer;
 };
 
-export const exportClientsToCSV = async (filters?: ExportFilters): Promise<Buffer> => {
+export const exportClientsToCSV = async (filters?: ExportFilters, selectedFields: string[] | null = null): Promise<Buffer> => {
   const where = await buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
@@ -164,22 +177,7 @@ export const exportClientsToCSV = async (filters?: ExportFilters): Promise<Buffe
     },
   });
 
-  const data = clients.map(client => ({
-    ID: client.id,
-    Nombre: client.name,
-    Email: client.email,
-    Teléfono: client.phone || '',
-    Empresa: client.company || '',
-    Estado: client.status,
-    Proveedor: client.provider.name,
-    Precio: client.price,
-    Fecha: client.date.toISOString().split('T')[0],
-    Dirección: client.address || '',
-    Ciudad: client.city || '',
-    País: client.country || '',
-    Notas: client.notes || '',
-    'Fecha Creación': client.createdAt.toISOString().split('T')[0],
-  }));
+  const data = buildExportData(clients, selectedFields);
 
   const worksheet = xlsx.utils.json_to_sheet(data);
   const csv = xlsx.utils.sheet_to_csv(worksheet);
@@ -187,7 +185,7 @@ export const exportClientsToCSV = async (filters?: ExportFilters): Promise<Buffe
   return Buffer.from(csv, 'utf-8');
 };
 
-export const exportClientsToPDF = async (filters?: ExportFilters): Promise<Buffer> => {
+export const exportClientsToPDF = async (filters?: ExportFilters, selectedFields: string[] | null = null): Promise<Buffer> => {
   const where = await buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
@@ -199,6 +197,20 @@ export const exportClientsToPDF = async (filters?: ExportFilters): Promise<Buffe
       createdAt: 'desc',
     },
   });
+
+  const fieldMapping: { [key: string]: { header: string; getValue: (client: any) => any } } = {
+    'provider': { header: 'Proveedor', getValue: (c) => c.provider.name },
+    'email': { header: 'Email', getValue: (c) => c.email },
+    'phone': { header: 'Teléfono', getValue: (c) => c.phone || '-' },
+    'date': { header: 'Fecha', getValue: (c) => c.createdAt.toISOString().split('T')[0] },
+    'price': { header: 'Precio', getValue: (c) => `$${c.price.toFixed(2)}` },
+    'status': { header: 'Estado', getValue: (c) => c.status },
+    'name': { header: 'Nombre', getValue: (c) => c.name },
+    'company': { header: 'Empresa', getValue: (c) => c.company || '-' },
+  };
+
+  const fieldsToExport = selectedFields || Object.keys(fieldMapping);
+  const headers = fieldsToExport.map(field => fieldMapping[field]?.header || field).filter(Boolean);
 
   let html = `
     <!DOCTYPE html>
@@ -223,33 +235,23 @@ export const exportClientsToPDF = async (filters?: ExportFilters): Promise<Buffe
       <table>
         <thead>
           <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th>Empresa</th>
-            <th>Estado</th>
-            <th>Proveedor</th>
-            <th>Precio</th>
-            <th>Fecha</th>
+            ${headers.map(header => `<th>${header}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
   `;
 
   clients.forEach(client => {
-    const statusClass = client.status === 'ACTIVE' ? 'status-active' : 'status-inactive';
-    html += `
-      <tr>
-        <td>${client.name}</td>
-        <td>${client.email}</td>
-        <td>${client.phone || '-'}</td>
-        <td>${client.company || '-'}</td>
-        <td class="${statusClass}">${client.status}</td>
-        <td>${client.provider.name}</td>
-        <td>$${client.price.toFixed(2)}</td>
-        <td>${client.date.toISOString().split('T')[0]}</td>
-      </tr>
-    `;
+    html += '<tr>';
+    fieldsToExport.forEach(field => {
+      if (fieldMapping[field]) {
+        const value = fieldMapping[field].getValue(client);
+        const isStatus = field === 'status';
+        const statusClass = isStatus && value === 'ACTIVE' ? 'status-active' : isStatus && value === 'INACTIVE' ? 'status-inactive' : '';
+        html += `<td class="${statusClass}">${value}</td>`;
+      }
+    });
+    html += '</tr>';
   });
 
   html += `

@@ -6,6 +6,7 @@ import { ClientStatus } from '@prisma/client';
 export const exportClients = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const format = req.query.format as string || 'excel';
+    const fields = req.query.fields as string || '';
 
     const filters: any = {};
 
@@ -46,18 +47,20 @@ export const exportClients = async (req: AuthRequest, res: Response): Promise<vo
       filters.endDate = new Date(dateStr + 'T00:00:00Z');
     }
 
+    const selectedFields = fields ? fields.split(',').map(f => f.trim()) : null;
+
     if (format === 'excel') {
-      const buffer = await exportService.exportClientsToExcel(filters);
+      const buffer = await exportService.exportClientsToExcel(filters, selectedFields);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', 'attachment; filename=clientes.xlsx');
       res.send(buffer);
     } else if (format === 'csv') {
-      const buffer = await exportService.exportClientsToCSV(filters);
+      const buffer = await exportService.exportClientsToCSV(filters, selectedFields);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename=clientes.csv');
       res.send(buffer);
     } else if (format === 'pdf') {
-      const buffer = await exportService.exportClientsToPDF(filters);
+      const buffer = await exportService.exportClientsToPDF(filters, selectedFields);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=clientes.pdf');
       res.send(buffer);
