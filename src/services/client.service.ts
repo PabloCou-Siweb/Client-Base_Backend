@@ -35,7 +35,7 @@ interface ClientFilters {
   search?: string;
   status?: ClientStatus;
   providerId?: string;
-  providerNames?: string;
+  providers?: string;
   minPrice?: number;
   maxPrice?: number;
   startDate?: Date;
@@ -102,35 +102,42 @@ export const getClients = async (
     where.providerId = filters.providerId;
   }
 
-  if (filters?.providerNames) {
-    try {
-      const providerNamesArray = JSON.parse(filters.providerNames);
-      if (Array.isArray(providerNamesArray) && providerNamesArray.length > 0) {
-        const providerSearchPromises = providerNamesArray.map(async (providerName) => {
-          const trimmedName = providerName.trim();
-          return await prisma.provider.findMany({
-            where: {
-              name: {
-                contains: trimmedName,
-              },
+  if (filters?.providers && typeof filters.providers === 'string') {
+    const providerNamesArray = filters.providers
+      .split(',')
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
+
+    console.log('🔍 DEBUG FILTRO PROVEEDORES:');
+    console.log('  Recibido:', filters.providers);
+    console.log('  Array después de split:', providerNamesArray);
+
+    if (providerNamesArray.length > 0) {
+      const providerSearchPromises = providerNamesArray.map(async (providerName) => {
+        return await prisma.provider.findMany({
+          where: {
+            name: {
+              contains: providerName,
             },
-          });
+          },
         });
+      });
 
-        const providerResults = await Promise.all(providerSearchPromises);
-        const providers = providerResults.flat();
-        const providerIds = providers.map((p) => p.id);
+      const providerResults = await Promise.all(providerSearchPromises);
+      const providers = providerResults.flat();
+      console.log('  Proveedores encontrados:', providers.map(p => p.name));
+      
+      const providerIds = [...new Set(providers.map((p) => p.id))];
+      console.log('  IDs encontrados:', providerIds);
 
-        if (providerIds.length > 0) {
-          where.providerId = {
-            in: providerIds,
-          };
-        } else {
-          where.id = { in: [] };
-        }
+      if (providerIds.length > 0) {
+        where.providerId = {
+          in: providerIds,
+        };
+      } else {
+        console.log('  ⚠️ NO se encontraron proveedores, devolviendo vacío');
+        where.id = { in: [] };
       }
-    } catch (error) {
-      console.error('Error parsing providerNames:', error);
     }
   }
 

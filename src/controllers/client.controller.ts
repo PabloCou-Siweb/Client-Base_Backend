@@ -37,8 +37,8 @@ export const getClients = async (req: AuthRequest, res: Response): Promise<void>
       filters.providerId = req.query.providerId as string;
     }
 
-    if (req.query.providerNames) {
-      filters.providerNames = req.query.providerNames as string;
+    if (req.query.providers) {
+      filters.providers = req.query.providers as string;
     }
 
     if (req.query.minPrice) {

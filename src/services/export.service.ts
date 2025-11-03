@@ -7,22 +7,27 @@ interface ExportFilters {
   search?: string;
   status?: ClientStatus;
   providerId?: string;
+  providers?: string;
   minPrice?: number;
   maxPrice?: number;
   startDate?: Date;
   endDate?: Date;
 }
 
-const buildWhereClause = (filters?: ExportFilters) => {
+const buildWhereClause = async (filters?: ExportFilters) => {
   const where: any = {};
 
-  if (filters?.search) {
-    where.OR = [
-      { name: { contains: filters.search, mode: 'insensitive' } },
-      { email: { contains: filters.search, mode: 'insensitive' } },
-      { phone: { contains: filters.search, mode: 'insensitive' } },
-      { company: { contains: filters.search, mode: 'insensitive' } },
-    ];
+  if (filters?.search && typeof filters.search === 'string') {
+    const searchTerm = filters.search.trim();
+    
+    if (searchTerm.length > 0 && searchTerm.length <= 100) {
+      where.OR = [
+        { name: { contains: searchTerm } },
+        { email: { contains: searchTerm } },
+        { phone: { contains: searchTerm } },
+        { company: { contains: searchTerm } },
+      ];
+    }
   }
 
   if (filters?.status) {
@@ -34,6 +39,37 @@ const buildWhereClause = (filters?: ExportFilters) => {
 
   if (filters?.providerId) {
     where.providerId = filters.providerId;
+  }
+
+  if (filters?.providers && typeof filters.providers === 'string') {
+    const providerNamesArray = filters.providers
+      .split(',')
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
+
+    if (providerNamesArray.length > 0) {
+      const providerSearchPromises = providerNamesArray.map(async (providerName) => {
+        return await prisma.provider.findMany({
+          where: {
+            name: {
+              contains: providerName,
+            },
+          },
+        });
+      });
+
+      const providerResults = await Promise.all(providerSearchPromises);
+      const providers = providerResults.flat();
+      const providerIds = [...new Set(providers.map((p) => p.id))];
+
+      if (providerIds.length > 0) {
+        where.providerId = {
+          in: providerIds,
+        };
+      } else {
+        where.id = { in: [] };
+      }
+    }
   }
 
   if (filters?.minPrice !== undefined || filters?.maxPrice !== undefined) {
@@ -60,7 +96,7 @@ const buildWhereClause = (filters?: ExportFilters) => {
 };
 
 export const exportClientsToExcel = async (filters?: ExportFilters): Promise<Buffer> => {
-  const where = buildWhereClause(filters);
+  const where = await buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
     where,
@@ -116,7 +152,7 @@ export const exportClientsToExcel = async (filters?: ExportFilters): Promise<Buf
 };
 
 export const exportClientsToCSV = async (filters?: ExportFilters): Promise<Buffer> => {
-  const where = buildWhereClause(filters);
+  const where = await buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
     where,
@@ -152,7 +188,7 @@ export const exportClientsToCSV = async (filters?: ExportFilters): Promise<Buffe
 };
 
 export const exportClientsToPDF = async (filters?: ExportFilters): Promise<Buffer> => {
-  const where = buildWhereClause(filters);
+  const where = await buildWhereClause(filters);
 
   const clients = await prisma.client.findMany({
     where,

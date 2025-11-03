@@ -14,11 +14,18 @@ export const exportClients = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     if (req.query.status) {
-      filters.status = req.query.status as ClientStatus;
+      const statusValue = (req.query.status as string).toUpperCase();
+      if (statusValue === 'ACTIVE' || statusValue === 'INACTIVE') {
+        filters.status = statusValue as ClientStatus;
+      }
     }
 
     if (req.query.providerId) {
       filters.providerId = req.query.providerId as string;
+    }
+
+    if (req.query.providers) {
+      filters.providers = req.query.providers as string;
     }
 
     if (req.query.minPrice) {
